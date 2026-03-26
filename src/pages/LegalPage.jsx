@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { acceptLegal, getLegal } from "../api/legal.js";
 import BottomNav from "../components/BottomNav.jsx";
 import LoadingScreen from "../components/LoadingScreen.jsx";
@@ -18,6 +18,7 @@ export default function LegalPage() {
         setLoading(true);
         setError("");
         const data = await getLegal();
+        console.log("LEGAL RESPONSE:", data);
         setLegal(data);
       } catch (err) {
         setError(err.message || "No fue posible cargar la información legal.");
@@ -29,17 +30,59 @@ export default function LegalPage() {
     loadLegal();
   }, []);
 
+  const legalVersion = useMemo(() => {
+    return (
+      legal?.version ||
+      legal?.current_version ||
+      legal?.legal_version ||
+      legal?.terms_version ||
+      ""
+    );
+  }, [legal]);
+
+  const legalAccepted = useMemo(() => {
+    return (
+      legal?.accepted === true ||
+      legal?.is_accepted === true ||
+      legal?.terms_accepted === true ||
+      legal?.current_terms_accepted === true ||
+      false
+    );
+  }, [legal]);
+
+  const legalText = useMemo(() => {
+    return (
+      legal?.text ||
+      legal?.content ||
+      legal?.terms_text ||
+      legal?.terms ||
+      legal?.body ||
+      legal?.legal_text ||
+      legal?.current_terms_text ||
+      ""
+    );
+  }, [legal]);
+
   async function handleAccept() {
     try {
       setSaving(true);
       setError("");
       setMessage("");
-      const version = legal?.version || legal?.current_version;
-      if (!version) {
+
+      if (!legalVersion) {
         throw new Error("No se encontró una versión legal para aceptar.");
       }
-      await acceptLegal(version);
+
+      await acceptLegal(legalVersion);
       setMessage("Los términos fueron aceptados correctamente.");
+
+      setLegal((prev) => ({
+        ...(prev || {}),
+        accepted: true,
+        is_accepted: true,
+        terms_accepted: true,
+        current_terms_accepted: true,
+      }));
     } catch (err) {
       setError(err.message || "No fue posible aceptar los términos.");
     } finally {
@@ -59,22 +102,53 @@ export default function LegalPage() {
           subtitle="Revisa los términos y condiciones vigentes del servicio."
         />
 
-        {error ? <div className="ecobus-error-box" style={{ marginBottom: 16 }}>{error}</div> : null}
-        {message ? <div className="ecobus-success-box" style={{ marginBottom: 16 }}>{message}</div> : null}
+        {error ? (
+          <div className="ecobus-error-box" style={{ marginBottom: 16 }}>
+            {error}
+          </div>
+        ) : null}
 
-        <section className="ecobus-card ecobus-info-card" style={{ marginBottom: 16 }}>
+        {message ? (
+          <div className="ecobus-success-box" style={{ marginBottom: 16 }}>
+            {message}
+          </div>
+        ) : null}
+
+        <section
+          className="ecobus-card ecobus-info-card"
+          style={{ marginBottom: 16 }}
+        >
           <h2 className="ecobus-section-title">
-            Versión {legal?.version || legal?.current_version || "vigente"}
+            {legalVersion ? `Versión ${legalVersion}` : "Términos vigentes"}
           </h2>
 
-          <div className="ecobus-legal-box">
-            {legal?.text || legal?.content || "No hay texto legal disponible."}
-          </div>
+          {legalAccepted ? (
+            <div
+              className="ecobus-success-box"
+              style={{ marginBottom: 16 }}
+            >
+              Ya aceptaste los términos vigentes.
+            </div>
+          ) : null}
+
+          {legalText ? (
+            <div className="ecobus-legal-box">{legalText}</div>
+          ) : (
+            <div className="ecobus-error-box">
+              No hay texto legal disponible para mostrar.
+            </div>
+          )}
         </section>
 
-        <PrimaryButton type="button" disabled={saving} onClick={handleAccept}>
-          {saving ? "Guardando..." : "Aceptar términos"}
-        </PrimaryButton>
+        {!legalAccepted && legalVersion ? (
+          <PrimaryButton
+            type="button"
+            disabled={saving}
+            onClick={handleAccept}
+          >
+            {saving ? "Guardando..." : "Aceptar términos"}
+          </PrimaryButton>
+        ) : null}
       </main>
 
       <BottomNav />
