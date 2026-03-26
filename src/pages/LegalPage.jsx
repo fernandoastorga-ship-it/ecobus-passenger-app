@@ -5,6 +5,21 @@ import LoadingScreen from "../components/LoadingScreen.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import PrimaryButton from "../components/ui/PrimaryButton.jsx";
 
+function formatDateTime(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString("es-CL", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return String(value);
+  }
+}
+
 export default function LegalPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -30,38 +45,37 @@ export default function LegalPage() {
     loadLegal();
   }, []);
 
+  const documentData = legal?.document || {};
+  const acceptance = legal?.acceptance || {};
+
+  const legalTitle = useMemo(() => {
+    return documentData?.title || "Términos y condiciones";
+  }, [documentData]);
+
   const legalVersion = useMemo(() => {
     return (
-      legal?.version ||
-      legal?.current_version ||
-      legal?.legal_version ||
-      legal?.terms_version ||
+      documentData?.version ||
+      acceptance?.current_terms_version ||
+      acceptance?.accepted_terms_version ||
       ""
     );
-  }, [legal]);
+  }, [documentData, acceptance]);
 
   const legalAccepted = useMemo(() => {
-    return (
-      legal?.accepted === true ||
-      legal?.is_accepted === true ||
-      legal?.terms_accepted === true ||
-      legal?.current_terms_accepted === true ||
-      false
-    );
-  }, [legal]);
+    return acceptance?.accepted === true;
+  }, [acceptance]);
+
+  const needsAcceptance = useMemo(() => {
+    return acceptance?.needs_acceptance === true;
+  }, [acceptance]);
 
   const legalText = useMemo(() => {
-    return (
-      legal?.text ||
-      legal?.content ||
-      legal?.terms_text ||
-      legal?.terms ||
-      legal?.body ||
-      legal?.legal_text ||
-      legal?.current_terms_text ||
-      ""
-    );
-  }, [legal]);
+    return documentData?.content || "";
+  }, [documentData]);
+
+  const acceptedAt = useMemo(() => {
+    return acceptance?.accepted_terms_at || "";
+  }, [acceptance]);
 
   async function handleAccept() {
     try {
@@ -78,10 +92,14 @@ export default function LegalPage() {
 
       setLegal((prev) => ({
         ...(prev || {}),
-        accepted: true,
-        is_accepted: true,
-        terms_accepted: true,
-        current_terms_accepted: true,
+        acceptance: {
+          ...(prev?.acceptance || {}),
+          accepted: true,
+          accepted_terms_version: legalVersion,
+          current_terms_version: legalVersion,
+          needs_acceptance: false,
+          accepted_terms_at: new Date().toISOString(),
+        },
       }));
     } catch (err) {
       setError(err.message || "No fue posible aceptar los términos.");
@@ -118,16 +136,20 @@ export default function LegalPage() {
           className="ecobus-card ecobus-info-card"
           style={{ marginBottom: 16 }}
         >
-          <h2 className="ecobus-section-title">
-            {legalVersion ? `Versión ${legalVersion}` : "Términos vigentes"}
+          <h2 className="ecobus-section-title" style={{ marginBottom: 8 }}>
+            {legalTitle}
           </h2>
 
-          {legalAccepted ? (
-            <div
-              className="ecobus-success-box"
-              style={{ marginBottom: 16 }}
-            >
-              Ya aceptaste los términos vigentes.
+          {legalVersion ? (
+            <div className="ecobus-helper-text" style={{ marginBottom: 12 }}>
+              Versión vigente: {legalVersion}
+            </div>
+          ) : null}
+
+          {legalAccepted && !needsAcceptance ? (
+            <div className="ecobus-success-box" style={{ marginBottom: 16 }}>
+              Ya aceptaste los términos vigentes
+              {acceptedAt ? ` el ${formatDateTime(acceptedAt)}.` : "."}
             </div>
           ) : null}
 
@@ -140,7 +162,7 @@ export default function LegalPage() {
           )}
         </section>
 
-        {!legalAccepted && legalVersion ? (
+        {needsAcceptance && legalVersion ? (
           <PrimaryButton
             type="button"
             disabled={saving}
