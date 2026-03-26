@@ -1,5 +1,5 @@
 import { apiFetch } from "./client.js";
 
 export async function getDashboard() {
-  return apiFetch("/app/dashboard");
+  return apiFetch("/app/dashboard/"); // 👈 con slash final
 }
