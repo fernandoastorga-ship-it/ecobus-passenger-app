@@ -4,7 +4,25 @@ import LoadingScreen from "../components/LoadingScreen.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import QuickActionCard from "../components/ui/QuickActionCard.jsx";
-import { normalizePaymentStatus } from "../utils/format.js";
+
+function normalizePaymentStatus(status) {
+  const value = String(status || "").toUpperCase();
+
+  if (["PAGADO", "PAID", "ACTIVE", "ACTIVO"].includes(value)) {
+    return { label: "Pagado", tone: "success" };
+  }
+
+  if (["PENDIENTE", "PENDING"].includes(value)) {
+    return { label: "Pendiente", tone: "warning" };
+  }
+
+  return { label: "Vencido", tone: "danger" };
+}
+
+function getFirstName(fullName) {
+  if (!fullName) return "Pasajero";
+  return String(fullName).trim().split(/\s+/)[0];
+}
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -17,6 +35,7 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
         const data = await getDashboard();
+        console.log("DASHBOARD RESPONSE:", data);
         setDashboard(data);
       } catch (err) {
         setError(err.message || "No fue posible cargar el dashboard.");
@@ -29,55 +48,101 @@ export default function DashboardPage() {
   }, []);
 
   const passenger = useMemo(() => {
+    const fullName =
+      dashboard?.passenger?.full_name ||
+      dashboard?.user?.full_name ||
+      dashboard?.profile?.full_name ||
+      dashboard?.full_name ||
+      dashboard?.name ||
+      dashboard?.passenger_name ||
+      "Pasajero";
+
+    const passengerCode =
+      dashboard?.passenger?.code ||
+      dashboard?.user?.code ||
+      dashboard?.profile?.code ||
+      dashboard?.code ||
+      dashboard?.passenger_code ||
+      "";
+
+    const pickupDefault =
+      dashboard?.passenger?.pickup_default ||
+      dashboard?.user?.pickup_default ||
+      dashboard?.profile?.pickup_default ||
+      dashboard?.pickup_default ||
+      "";
+
     return {
-      firstName:
-        dashboard?.passenger?.first_name ||
-        dashboard?.user?.first_name ||
-        dashboard?.first_name ||
-        "Pasajero",
-      fullName:
-        dashboard?.passenger?.full_name ||
-        dashboard?.user?.full_name ||
-        dashboard?.full_name ||
-        "Usuario Ecobus",
+      firstName: getFirstName(fullName),
+      fullName,
+      code: passengerCode,
+      pickupDefault,
     };
   }, [dashboard]);
 
   const monthlyPlan = useMemo(() => {
+    const plan =
+      dashboard?.monthly_plan ||
+      dashboard?.plan ||
+      dashboard?.subscription ||
+      dashboard?.monthly_subscription ||
+      {};
+
+    const ridesIncluded = Number(
+      plan?.rides_included ??
+        dashboard?.rides_included ??
+        0
+    );
+
+    const ridesUsed = Number(
+      plan?.rides_used_total ??
+        plan?.rides_used ??
+        dashboard?.rides_used_total ??
+        dashboard?.rides_used ??
+        0
+    );
+
+    const ridesRemaining = Number(
+      plan?.rides_remaining ??
+        dashboard?.rides_remaining ??
+        Math.max(ridesIncluded - ridesUsed, 0)
+    );
+
+    const paymentStatus =
+      plan?.payment_status ||
+      dashboard?.payment_status ||
+      "PENDIENTE";
+
+    const planName =
+      plan?.plan_type ||
+      plan?.name ||
+      dashboard?.plan_type ||
+      "Plan mensual";
+
+    const periodLabel =
+      plan?.period_label ||
+      dashboard?.period_label ||
+      "Periodo actual";
+
     return {
-      ridesIncluded:
-        dashboard?.monthly_plan?.rides_included ??
-        dashboard?.plan?.rides_included ??
-        0,
-      ridesUsed:
-        dashboard?.monthly_plan?.rides_used ??
-        dashboard?.plan?.rides_used ??
-        0,
-      ridesRemaining:
-        dashboard?.monthly_plan?.rides_remaining ??
-        dashboard?.plan?.rides_remaining ??
-        0,
-      paymentStatus:
-        dashboard?.monthly_plan?.payment_status ??
-        dashboard?.plan?.payment_status ??
-        "pending",
-      planName:
-        dashboard?.monthly_plan?.name ??
-        dashboard?.plan?.name ??
-        "Plan mensual",
-      periodLabel:
-        dashboard?.monthly_plan?.period_label ??
-        dashboard?.plan?.period_label ??
-        "Periodo actual",
+      ridesIncluded,
+      ridesUsed,
+      ridesRemaining,
+      paymentStatus,
+      planName,
+      periodLabel,
     };
   }, [dashboard]);
 
-  const hasDailyPass =
-    dashboard?.daily_pass?.active ??
-    dashboard?.daily_pass_active ??
-    false;
-
   const paymentStatus = normalizePaymentStatus(monthlyPlan.paymentStatus);
+
+  const hasDailyPass = useMemo(() => {
+    return (
+      dashboard?.daily_pass_active === true ||
+      dashboard?.daily_pass?.active === true ||
+      false
+    );
+  }, [dashboard]);
 
   if (loading) {
     return <LoadingScreen message="Cargando tu resumen..." />;
@@ -94,7 +159,11 @@ export default function DashboardPage() {
           </p>
         </header>
 
-        {error ? <div className="ecobus-error-box" style={{ marginBottom: 16 }}>{error}</div> : null}
+        {error ? (
+          <div className="ecobus-error-box" style={{ marginBottom: 16 }}>
+            {error}
+          </div>
+        ) : null}
 
         <section className="ecobus-grid">
           <div className="ecobus-hero-card">
@@ -157,10 +226,22 @@ export default function DashboardPage() {
             <div className="ecobus-subtitle" style={{ marginBottom: 8 }}>
               {passenger.fullName}
             </div>
-            <div className="ecobus-helper-text">
-              Desde aquí podrás gestionar tu acceso, revisar tus movimientos y
-              mantener control de tu servicio.
-            </div>
+
+            {passenger.code ? (
+              <div className="ecobus-helper-text" style={{ marginBottom: 4 }}>
+                Código: {passenger.code}
+              </div>
+            ) : null}
+
+            {passenger.pickupDefault ? (
+              <div className="ecobus-helper-text">
+                Punto habitual: {passenger.pickupDefault}
+              </div>
+            ) : (
+              <div className="ecobus-helper-text">
+                Desde aquí podrás revisar tus movimientos y el estado de tu servicio.
+              </div>
+            )}
           </div>
         </section>
       </main>
