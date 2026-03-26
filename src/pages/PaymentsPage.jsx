@@ -4,7 +4,20 @@ import BottomNav from "../components/BottomNav.jsx";
 import LoadingScreen from "../components/LoadingScreen.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
-import { normalizePaymentStatus } from "../utils/format.js";
+
+function normalizePaymentStatus(status) {
+  const value = String(status || "").toUpperCase();
+
+  if (["PAGADO", "PAID", "ACTIVE", "ACTIVO"].includes(value)) {
+    return { label: "Pagado", tone: "success" };
+  }
+
+  if (["PENDIENTE", "PENDING"].includes(value)) {
+    return { label: "Pendiente", tone: "warning" };
+  }
+
+  return { label: "Vencido", tone: "danger" };
+}
 
 export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
@@ -17,6 +30,7 @@ export default function PaymentsPage() {
         setLoading(true);
         setError("");
         const data = await getPayments();
+        console.log("PAYMENTS RESPONSE:", data);
         setPayments(data);
       } catch (err) {
         setError(err.message || "No fue posible cargar tus pagos.");
@@ -28,14 +42,23 @@ export default function PaymentsPage() {
     loadPayments();
   }, []);
 
+  const plan =
+    payments?.monthly_plan ||
+    payments?.plan ||
+    payments?.subscription ||
+    payments?.monthly_subscription ||
+    {};
+
   const monthlyStatus = useMemo(() => {
     return normalizePaymentStatus(
-      payments?.monthly_plan?.payment_status || payments?.payment_status || "pending"
+      plan?.payment_status || payments?.payment_status || "PENDIENTE"
     );
-  }, [payments]);
+  }, [plan, payments]);
 
   const dailyPassActive =
-    payments?.daily_pass?.active ?? payments?.daily_pass_active ?? false;
+    payments?.daily_pass?.active ??
+    payments?.daily_pass_active ??
+    false;
 
   if (loading) {
     return <LoadingScreen message="Cargando estado de pagos..." />;
@@ -49,7 +72,11 @@ export default function PaymentsPage() {
           subtitle="Consulta el estado de tu plan mensual y tu pase diario."
         />
 
-        {error ? <div className="ecobus-error-box" style={{ marginBottom: 16 }}>{error}</div> : null}
+        {error ? (
+          <div className="ecobus-error-box" style={{ marginBottom: 16 }}>
+            {error}
+          </div>
+        ) : null}
 
         <section className="ecobus-grid">
           <div className="ecobus-card ecobus-info-card">
@@ -59,7 +86,7 @@ export default function PaymentsPage() {
                   Plan mensual
                 </h2>
                 <p className="ecobus-subtitle">
-                  {payments?.monthly_plan?.name || "Plan mensual activo"}
+                  {plan?.plan_type || plan?.name || "Plan mensual"}
                 </p>
               </div>
               <StatusBadge status={monthlyStatus.tone}>
@@ -67,8 +94,14 @@ export default function PaymentsPage() {
               </StatusBadge>
             </div>
 
+            <p className="ecobus-subtitle" style={{ marginBottom: 8 }}>
+              Viajes incluidos: {plan?.rides_included ?? 0}
+            </p>
+            <p className="ecobus-subtitle" style={{ marginBottom: 8 }}>
+              Viajes usados: {plan?.rides_used_total ?? 0}
+            </p>
             <p className="ecobus-subtitle">
-              Revisa aquí el estado actualizado de tu plan y los cobros asociados.
+              Viajes restantes: {plan?.rides_remaining ?? 0}
             </p>
           </div>
 
