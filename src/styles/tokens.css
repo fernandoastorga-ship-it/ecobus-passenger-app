@@ -1,20 +1,20 @@
 :root {
-  --ecobus-primary: #0f3d75;
-  --ecobus-primary-strong: #0a2b52;
-  --ecobus-primary-soft: #eaf2fb;
+  --ecobus-primary: #166534;
+  --ecobus-primary-strong: #14532d;
+  --ecobus-primary-soft: #e8f5ec;
 
-  --ecobus-accent: #14b8a6;
-  --ecobus-accent-soft: #e8fbf8;
+  --ecobus-accent: #22c55e;
+  --ecobus-accent-soft: #ecfdf3;
 
-  --ecobus-bg: #f4f7fb;
+  --ecobus-bg: #f6fbf7;
   --ecobus-surface: #ffffff;
-  --ecobus-border: #d9e2ec;
+  --ecobus-border: #d8e7dc;
 
-  --ecobus-text: #102a43;
-  --ecobus-text-soft: #486581;
-  --ecobus-text-muted: #7b8794;
+  --ecobus-text: #163020;
+  --ecobus-text-soft: #4d6b57;
+  --ecobus-text-muted: #7a8f81;
 
-  --ecobus-success: #16a34a;
+  --ecobus-success: #15803d;
   --ecobus-success-soft: #eaf8ef;
 
   --ecobus-warning: #d97706;
@@ -23,16 +23,16 @@
   --ecobus-danger: #dc2626;
   --ecobus-danger-soft: #fdecec;
 
-  --ecobus-info: #2563eb;
-  --ecobus-info-soft: #eaf1ff;
+  --ecobus-info: #16a34a;
+  --ecobus-info-soft: #ecfdf3;
 
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 22px;
   --radius-xl: 28px;
 
-  --shadow-sm: 0 4px 12px rgba(16, 42, 67, 0.06);
-  --shadow-md: 0 10px 24px rgba(16, 42, 67, 0.10);
+  --shadow-sm: 0 4px 12px rgba(22, 48, 32, 0.06);
+  --shadow-md: 0 10px 24px rgba(22, 48, 32, 0.10);
 
   --container-width: 480px;
 
