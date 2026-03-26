@@ -19,6 +19,7 @@ export default function QrPage() {
         setLoading(true);
         setError("");
         const data = await getQrBundle();
+        console.log("QR BUNDLE RESPONSE:", data);
         setQrData(data);
       } catch (err) {
         setError(err.message || "No fue posible cargar tu QR.");
@@ -30,21 +31,42 @@ export default function QrPage() {
     loadQr();
   }, []);
 
+  const paymentStatus = String(
+    qrData?.payment_status ||
+      qrData?.monthly_plan?.payment_status ||
+      qrData?.subscription?.payment_status ||
+      ""
+  ).toUpperCase();
+
+  const planType = String(
+    qrData?.plan_type ||
+      qrData?.monthly_plan?.plan_type ||
+      qrData?.subscription?.plan_type ||
+      ""
+  ).toUpperCase();
+
+  const ridesRemaining = Number(
+    qrData?.rides_remaining ??
+      qrData?.monthly_plan?.rides_remaining ??
+      qrData?.subscription?.rides_remaining ??
+      0
+  );
+
   const hasMonthlyPlan = useMemo(() => {
     return (
-      qrData?.monthly_plan_active === true ||
+      paymentStatus === "PAGADO" ||
+      planType.startsWith("VIAJES_") ||
+      ridesRemaining > 0 ||
       qrData?.monthly_qr_available === true ||
-      qrData?.has_monthly_qr === true ||
-      qrData?.plan_type === "monthly"
+      qrData?.has_monthly_qr === true
     );
-  }, [qrData]);
+  }, [paymentStatus, planType, ridesRemaining, qrData]);
 
   const hasDailyPass = useMemo(() => {
     return (
       qrData?.daily_pass_active === true ||
       qrData?.daily_qr_available === true ||
-      qrData?.has_daily_pass_qr === true ||
-      qrData?.plan_type === "daily_pass"
+      qrData?.has_daily_pass_qr === true
     );
   }, [qrData]);
 
