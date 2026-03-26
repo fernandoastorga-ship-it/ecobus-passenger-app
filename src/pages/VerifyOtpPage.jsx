@@ -49,9 +49,9 @@ export default function VerifyOtpPage() {
       <main className="ecobus-page--auth">
         <section className="ecobus-auth-card">
           <div className="ecobus-brand-block">
-            <div className="ecobus-logo-badge ecobus-logo-badge--image">
-              <img src="/logo-ecobus.png" alt="Ecobus" className="ecobus-logo-image" />
-            </div>
+           <div className="ecobus-logo-wrap">
+             <img src="/logo-ecobus.png" alt="Ecobus" className="ecobus-logo-image" />
+          </div> 
 
             <div>
               <h1 className="ecobus-title">Verifica tu acceso</h1>
