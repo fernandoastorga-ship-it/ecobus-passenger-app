@@ -32,7 +32,7 @@ export default function LoginPage() {
       <main className="ecobus-page--auth">
         <section className="ecobus-auth-card">
           <div className="ecobus-brand-block">
-            <div className="ecobus-logo-badge ecobus-logo-badge--image">
+            <div className="ecobus-logo-wrap">
               <img src="/logo-ecobus.png" alt="Ecobus" className="ecobus-logo-image" />
             </div>
 
