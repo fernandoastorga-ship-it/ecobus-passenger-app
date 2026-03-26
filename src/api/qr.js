@@ -1,7 +1,7 @@
 import { apiFetch } from "./client.js";
 
 export async function getQrBundle() {
-  return apiFetch("/app/qr/"); // 👈 bundle completo
+  return apiFetch("/app/qr/");
 }
 
 export function getMonthlyQrImageUrl() {
