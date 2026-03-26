@@ -1,33 +1,33 @@
 .ecobus-brand-block {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
 
 .ecobus-logo-badge {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, var(--ecobus-primary), var(--ecobus-primary-strong));
-  color: white;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  font-weight: 800;
-  box-shadow: var(--shadow-md);
+  width: 160px;
+  height: 80px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid var(--ecobus-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  padding: 10px 16px;
 }
 
 .ecobus-logo-badge--image {
   background: #ffffff;
-  border: 1px solid var(--ecobus-border);
-  overflow: hidden;
 }
 
 .ecobus-logo-image {
-  width: 80%;
-  height: 80%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  display: block;
 }
 
 .ecobus-auth-card {
