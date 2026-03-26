@@ -18,6 +18,18 @@
   box-shadow: var(--shadow-md);
 }
 
+.ecobus-logo-badge--image {
+  background: #ffffff;
+  border: 1px solid var(--ecobus-border);
+  overflow: hidden;
+}
+
+.ecobus-logo-image {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
 .ecobus-auth-card {
   width: 100%;
   padding: var(--space-6);
