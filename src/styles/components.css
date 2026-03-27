@@ -409,3 +409,36 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+.ecobus-payments-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.ecobus-payments-summary__item {
+  background: var(--ecobus-primary-soft);
+  border-radius: 16px;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.ecobus-payments-summary__label {
+  display: block;
+  font-size: 12px;
+  color: var(--ecobus-text-soft);
+  margin-bottom: 6px;
+}
+
+.ecobus-payments-summary__value {
+  display: block;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ecobus-primary-strong);
+}
+
+@media (max-width: 360px) {
+  .ecobus-payments-summary {
+    grid-template-columns: 1fr;
+  }
+}
