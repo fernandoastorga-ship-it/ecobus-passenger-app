@@ -50,6 +50,117 @@ function getTodayDate() {
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+const overlayStyle = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.45)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 9999,
+  padding: 16,
+};
+
+const modalStyle = {
+  width: "100%",
+  maxWidth: 780,
+  background: "#ffffff",
+  borderRadius: 12,
+  padding: 20,
+  position: "relative",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+};
+
+const modalTitleStyle = {
+  fontSize: 18,
+  fontWeight: 700,
+  textAlign: "center",
+  marginBottom: 18,
+  color: "#1f2937",
+};
+
+const paymentOptionsRowStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 16,
+};
+
+const paymentOptionButtonStyle = {
+  minHeight: 96,
+  borderRadius: 10,
+  border: "1px solid #d1d5db",
+  background: "#f9fafb",
+  cursor: "pointer",
+  fontSize: 16,
+  fontWeight: 700,
+  color: "#1f2937",
+};
+
+const paymentOptionWebpayStyle = {
+  minHeight: 96,
+  borderRadius: 10,
+  border: "1px solid #22c1d6",
+  background: "#f9fafb",
+  cursor: "pointer",
+  fontSize: 16,
+  fontWeight: 700,
+  color: "#1f2937",
+  position: "relative",
+};
+
+const paymentOptionTitleStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "100%",
+};
+
+const webpayFeeBadgeStyle = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  background: "#22c1d6",
+  color: "#ffffff",
+  fontWeight: 700,
+  fontSize: 14,
+  padding: "6px 0",
+  borderTopLeftRadius: 10,
+  borderTopRightRadius: 10,
+};
+
+const closeButtonStyle = {
+  position: "absolute",
+  top: 10,
+  right: 14,
+  background: "transparent",
+  border: "none",
+  fontSize: 28,
+  cursor: "pointer",
+  color: "#111827",
+};
+
+const transferBoxStyle = {
+  border: "1px solid #9ca3af",
+  borderRadius: 8,
+  padding: 14,
+  background: "#f9fafb",
+  color: "#111827",
+  lineHeight: 1.7,
+  marginBottom: 16,
+};
+
+const transferButtonStyle = {
+  width: "100%",
+  border: "none",
+  borderRadius: 8,
+  background: "#22c1d6",
+  color: "#111827",
+  fontWeight: 800,
+  fontSize: 16,
+  padding: "14px 16px",
+  cursor: "pointer",
+};
 
 export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
@@ -62,6 +173,10 @@ export default function PaymentsPage() {
   const [selectedPlanType, setSelectedPlanType] = useState("VIAJES_20");
   const [selectedTripType, setSelectedTripType] = useState("IDA");
   const [selectedServiceDate, setSelectedServiceDate] = useState(getTodayDate());
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [pendingPurchase, setPendingPurchase] = useState(null); 
+  // "monthly" o "daily"
 
   async function loadPayments() {
     try {
@@ -141,7 +256,7 @@ export default function PaymentsPage() {
     ? { label: "Activo", tone: "success" }
     : normalizePaymentStatus(dailyPass.paymentStatus);
 
-  async function handleBuyMonthlyPlan() {
+  async function handleBuyMonthlyPlan(useWebpayFee = false) {
     try {
       setSubmittingMonthly(true);
       setError("");
@@ -150,6 +265,7 @@ export default function PaymentsPage() {
       const data = await initMonthlyPlanWebpay({
         month: getCurrentMonthFirstDay(),
         plan_type: selectedPlanType,
+        use_webpay_fee: useWebpayFee,
       });
 
       if (!data?.ok || !data?.payment_url || !data?.token) {
@@ -164,7 +280,7 @@ export default function PaymentsPage() {
     }
   }
 
-  async function handleBuyDailyPass() {
+  async function handleBuyDailyPass(useWebpayFee = false) {
     try {
       setSubmittingDaily(true);
       setError("");
@@ -173,6 +289,7 @@ export default function PaymentsPage() {
       const data = await initDailyPassWebpay({
         service_date: selectedServiceDate,
         trip_type: selectedTripType,
+        use_webpay_fee: useWebpayFee,
       });
 
       if (!data?.ok || !data?.payment_url || !data?.token) {
@@ -270,7 +387,10 @@ export default function PaymentsPage() {
             <PrimaryButton
               type="button"
               disabled={submittingMonthly}
-              onClick={handleBuyMonthlyPlan}
+              onClick={() => {
+                setPendingPurchase("monthly");
+                setShowPaymentModal(true);
+              }}
             >
               {submittingMonthly ? "Procesando..." : "Comprar o renovar plan mensual"}
             </PrimaryButton>
@@ -341,7 +461,10 @@ export default function PaymentsPage() {
             <PrimaryButton
               type="button"
               disabled={submittingDaily}
-              onClick={handleBuyDailyPass}
+              onClick={() => {
+                setPendingPurchase("daily");
+                setShowPaymentModal(true);
+              }}
             >
               {submittingDaily ? "Procesando..." : "Comprar pase diario"}
             </PrimaryButton>
@@ -362,6 +485,80 @@ export default function PaymentsPage() {
           </div>
         </section>
       </main>
+
+      {showPaymentModal && (
+        <div style={overlayStyle}>
+          <div style={modalStyle}>
+            <div style={modalTitleStyle}>Elige el método de pago con que deseas pagar</div>
+
+            <div style={paymentOptionsRowStyle}>
+              <button
+                type="button"
+                style={paymentOptionButtonStyle}
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setShowTransferModal(true);
+                }}
+              >
+                <div style={paymentOptionTitleStyle}>🏦 Transferencia bancaria</div>
+              </button>
+
+              <button
+                type="button"
+                style={paymentOptionWebpayStyle}
+                onClick={() => {
+                  setShowPaymentModal(false);
+
+                  if (pendingPurchase === "monthly") {
+                    handleBuyMonthlyPlan(true);
+                  } else if (pendingPurchase === "daily") {
+                    handleBuyDailyPass(true);
+                  }
+                }}
+              >
+                <div style={webpayFeeBadgeStyle}>+5%</div>
+                <div style={paymentOptionTitleStyle}>Webpay</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTransferModal && (
+        <div style={overlayStyle}>
+          <div style={modalStyle}>
+            <button
+              type="button"
+              style={closeButtonStyle}
+              onClick={() => setShowTransferModal(false)}
+            >
+              ×
+            </button>
+
+            <div style={modalTitleStyle}>Datos de la transferencia</div>
+
+            <div style={transferBoxStyle}>
+              <div><strong>Banco:</strong> Bci/ Banco Credito e Inversiones</div>
+              <div><strong>Nombre:</strong> EcoBus</div>
+              <div><strong>Tipo cuenta:</strong> Cuenta vista</div>
+              <div><strong>Rut:</strong> 19.849.459-3</div>
+              <div><strong>Cuenta:</strong> 777019849459</div>
+              <div><strong>Email:</strong> fernando.astorga@rentabuses.cl</div>
+            </div>
+
+            <button
+              type="button"
+              style={transferButtonStyle}
+              onClick={() => {
+                alert("Transferencia informada. Quedará pendiente de aprobación.");
+                setShowTransferModal(false);
+              }}
+            >
+              YA TRANSFERÍ
+            </button>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
