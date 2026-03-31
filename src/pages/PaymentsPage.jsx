@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { getPayments } from "../api/payments.js";
+import {
+  getPayments,
+  initMonthlyPlanWebpay,
+  initDailyPassWebpay,
+} from "../api/payments.js";
 import BottomNav from "../components/BottomNav.jsx";
 import LoadingScreen from "../components/LoadingScreen.jsx";
 import PageHeader from "../components/PageHeader.jsx";
@@ -47,35 +51,6 @@ function getTodayDate() {
   return `${year}-${month}-${day}`;
 }
 
-function getApiBaseUrl() {
-  const envBase =
-    import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_API_URL ||
-    "";
-
-  if (envBase) {
-    return envBase.replace(/\/+$/, "");
-  }
-
-  return "https://ecobus-api.onrender.com";
-}
-
-function getAccessToken() {
-  const candidates = [
-    localStorage.getItem("access_token"),
-    localStorage.getItem("token"),
-    localStorage.getItem("authToken"),
-    localStorage.getItem("ecobus_token"),
-    sessionStorage.getItem("access_token"),
-    sessionStorage.getItem("token"),
-    sessionStorage.getItem("authToken"),
-    sessionStorage.getItem("ecobus_token"),
-  ];
-
-  const token = candidates.find((value) => value && String(value).trim());
-  return token ? String(token).trim() : "";
-}
-
 export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [submittingMonthly, setSubmittingMonthly] = useState(false);
@@ -87,8 +62,6 @@ export default function PaymentsPage() {
   const [selectedPlanType, setSelectedPlanType] = useState("VIAJES_20");
   const [selectedTripType, setSelectedTripType] = useState("IDA");
   const [selectedServiceDate, setSelectedServiceDate] = useState(getTodayDate());
-
-  const API_BASE = getApiBaseUrl();
 
   async function loadPayments() {
     try {
@@ -124,21 +97,15 @@ export default function PaymentsPage() {
 
       setError("");
       loadPayments();
-
-      const cleanUrl = `${window.location.pathname}`;
-      window.history.replaceState({}, document.title, cleanUrl);
+      window.history.replaceState({}, document.title, window.location.pathname);
     } else if (payment === "failed") {
       setError("El pago no pudo ser completado.");
       setMessage("");
-
-      const cleanUrl = `${window.location.pathname}`;
-      window.history.replaceState({}, document.title, cleanUrl);
+      window.history.replaceState({}, document.title, window.location.pathname);
     } else if (payment === "aborted") {
       setError("El pago fue cancelado o abortado.");
       setMessage("");
-
-      const cleanUrl = `${window.location.pathname}`;
-      window.history.replaceState({}, document.title, cleanUrl);
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
@@ -180,27 +147,13 @@ export default function PaymentsPage() {
       setError("");
       setMessage("");
 
-      const token = getAccessToken();
-      if (!token) {
-        throw new Error("No se encontró token de sesión. Vuelve a iniciar sesión.");
-      }
-
-      const res = await fetch(`${API_BASE}/app/payments/webpay/monthly-plan/init`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          month: getCurrentMonthFirstDay(),
-          plan_type: selectedPlanType,
-        }),
+      const data = await initMonthlyPlanWebpay({
+        month: getCurrentMonthFirstDay(),
+        plan_type: selectedPlanType,
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data?.ok) {
-        throw new Error(data?.detail || "No fue posible iniciar el pago del plan mensual.");
+      if (!data?.ok || !data?.payment_url || !data?.token) {
+        throw new Error("No fue posible iniciar el pago del plan mensual.");
       }
 
       redirectToWebpay(data.payment_url, data.token);
@@ -217,27 +170,13 @@ export default function PaymentsPage() {
       setError("");
       setMessage("");
 
-      const token = getAccessToken();
-      if (!token) {
-        throw new Error("No se encontró token de sesión. Vuelve a iniciar sesión.");
-      }
-
-      const res = await fetch(`${API_BASE}/app/payments/webpay/daily-pass/init`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          service_date: selectedServiceDate,
-          trip_type: selectedTripType,
-        }),
+      const data = await initDailyPassWebpay({
+        service_date: selectedServiceDate,
+        trip_type: selectedTripType,
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data?.ok) {
-        throw new Error(data?.detail || "No fue posible iniciar el pago del pase diario.");
+      if (!data?.ok || !data?.payment_url || !data?.token) {
+        throw new Error("No fue posible iniciar el pago del pase diario.");
       }
 
       redirectToWebpay(data.payment_url, data.token);
