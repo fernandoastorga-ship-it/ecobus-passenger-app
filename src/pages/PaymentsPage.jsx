@@ -539,7 +539,7 @@ export default function PaymentsPage() {
 
             <div style={transferBoxStyle}>
               <div><strong>Banco:</strong> Bci/ Banco Credito e Inversiones</div>
-              <div><strong>Nombre:</strong> EcoBus</div>
+              <div><strong>Nombre:</strong> Fernando Astorga</div>
               <div><strong>Tipo cuenta:</strong> Cuenta vista</div>
               <div><strong>Rut:</strong> 19.849.459-3</div>
               <div><strong>Cuenta:</strong> 777019849459</div>
