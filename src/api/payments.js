@@ -25,3 +25,18 @@ export async function initDailyPassWebpay({
     body: JSON.stringify({ service_date, trip_type, use_webpay_fee }),
   });
 }
+
+export async function notifyTransfer({
+  request_type,
+  payload,
+  notes = null,
+}) {
+  return apiFetch("/app/payments/transfer/notify", {
+    method: "POST",
+    body: JSON.stringify({
+      request_type,
+      payload,
+      notes,
+    }),
+  });
+}
