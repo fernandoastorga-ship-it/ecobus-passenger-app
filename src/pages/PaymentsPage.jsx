@@ -3,6 +3,7 @@ import {
   getPayments,
   initMonthlyPlanWebpay,
   initDailyPassWebpay,
+  notifyTransfer,
 } from "../api/payments.js";
 import BottomNav from "../components/BottomNav.jsx";
 import LoadingScreen from "../components/LoadingScreen.jsx";
@@ -175,7 +176,8 @@ export default function PaymentsPage() {
   const [selectedServiceDate, setSelectedServiceDate] = useState(getTodayDate());
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [pendingPurchase, setPendingPurchase] = useState(null); 
+  const [pendingPurchase, setPendingPurchase] = useState(null);
+  const [submittingTransfer, setSubmittingTransfer] = useState(false);
   // "monthly" o "daily"
 
   async function loadPayments() {
@@ -191,7 +193,7 @@ export default function PaymentsPage() {
       setLoading(false);
     }
   }
-
+  
   useEffect(() => {
     loadPayments();
   }, []);
@@ -223,6 +225,52 @@ export default function PaymentsPage() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
+
+  async function handleTransferNotify() {
+    try {
+      setSubmittingTransfer(true);
+      setError("");
+      setMessage("");
+
+      if (!pendingPurchase) {
+        throw new Error("No hay una compra pendiente para informar.");
+      }
+
+      let request_type;
+      let payload;
+
+      if (pendingPurchase === "monthly") {
+        request_type = "MONTHLY";
+        payload = {
+          month: getCurrentMonthFirstDay(),
+          plan_type: selectedPlanType,
+        };
+      } else if (pendingPurchase === "daily") {
+        request_type = "DAILY";
+        payload = {
+          service_date: selectedServiceDate,
+          trip_type: selectedTripType,
+        };
+      } else {
+        throw new Error("Tipo de compra pendiente no válido.");
+      }
+
+      await notifyTransfer({
+        request_type,
+        payload,
+        notes: "Transferencia informada por pasajero desde app",
+      });
+
+      setShowTransferModal(false);
+      setPendingPurchase(null);
+      setMessage("Transferencia informada correctamente. Quedará pendiente de validación manual.");
+      await loadPayments();
+    } catch (err) {
+      setError(err.message || "No fue posible informar la transferencia.");
+    } finally {
+      setSubmittingTransfer(false);
+    }
+  }
 
   const monthlyPlan = useMemo(() => {
     const plan = payments?.monthly_plan || {};
@@ -547,15 +595,12 @@ export default function PaymentsPage() {
             </div>
 
             <button
-              type="button"
               style={transferButtonStyle}
-              onClick={() => {
-                alert("Transferencia informada. Quedará pendiente de aprobación.");
-                setShowTransferModal(false);
-              }}
-            >
-              YA TRANSFERÍ
-            </button>
+              onClick={handleTransferNotify}
+                disabled={submittingTransfer}
+              >
+                {submittingTransfer ? "Enviando..." : "YA TRANSFERÍ"}
+              </button>
           </div>
         </div>
       )}
