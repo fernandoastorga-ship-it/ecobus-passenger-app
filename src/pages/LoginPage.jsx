@@ -37,7 +37,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <h1 className="ecobus-title">Bienvenido a Ecobus</h1>
+              <h1 className="ecobus-title">Bienvenido a WorkBus</h1>
             </div>
 
             <p className="ecobus-subtitle">
