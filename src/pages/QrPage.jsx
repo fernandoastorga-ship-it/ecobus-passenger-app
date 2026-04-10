@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getQrBundle } from "../api/qr.js";
 import { getToken } from "../utils/auth.js";
 import BottomNav from "../components/BottomNav.jsx";
@@ -13,91 +13,106 @@ export default function QrPage() {
   const [qrData, setQrData] = useState(null);
   const [qrImageSrc, setQrImageSrc] = useState("");
 
-  useEffect(() => {
+  const loadQr = useCallback(async () => {
     let objectUrl = null;
 
-    async function loadQr() {
-      try {
-        setLoading(true);
-        setError("");
-        setQrImageSrc("");
+    try {
+      setLoading(true);
+      setError("");
+      setQrImageSrc("");
 
-        const data = await getQrBundle();
-        console.log("QR BUNDLE RESPONSE:", data);
-        setQrData(data);
+      const data = await getQrBundle();
+      console.log("QR BUNDLE RESPONSE:", data);
+      setQrData(data);
 
-        const hasMonthlyQr = data?.monthly_qr?.available === true;
-        const hasDailyPassQr = data?.daily_pass_qr?.available === true;
+      const effectiveQr = data?.effective_qr;
+      const imageUrl = effectiveQr?.available ? effectiveQr?.image_url || "" : "";
 
-        let imageUrl = "";
-        if (hasMonthlyQr) {
-          imageUrl = data?.monthly_qr?.image_url || "";
-        } else if (hasDailyPassQr) {
-          imageUrl =
-            data?.daily_pass_qr?.image_url ||
-            "https://ecobus-api.onrender.com/app/qr/daily-pass/image";
-        }
-
-        if (!imageUrl) {
-          return;
-        }
-
-        setImageLoading(true);
-
-        const token = getToken();
-        const response = await fetch(imageUrl, {
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : {},
-        });
-
-        if (!response.ok) {
-          throw new Error("No fue posible descargar la imagen del QR.");
-        }
-
-        const blob = await response.blob();
-        objectUrl = URL.createObjectURL(blob);
-        setQrImageSrc(objectUrl);
-      } catch (err) {
-        setError(err.message || "No fue posible cargar tu QR.");
-      } finally {
-        setLoading(false);
-        setImageLoading(false);
+      if (!imageUrl) {
+        return;
       }
+
+      setImageLoading(true);
+
+      const token = getToken();
+      const response = await fetch(imageUrl, {
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {},
+      });
+
+      if (!response.ok) {
+        throw new Error("No fue posible descargar la imagen del QR.");
+      }
+
+      const blob = await response.blob();
+      objectUrl = URL.createObjectURL(blob);
+      setQrImageSrc((prev) => {
+        if (prev) {
+          URL.revokeObjectURL(prev);
+        }
+        return objectUrl;
+      });
+    } catch (err) {
+      setError(err.message || "No fue posible cargar tu QR.");
+    } finally {
+      setLoading(false);
+      setImageLoading(false);
     }
-
-    loadQr();
-
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
   }, []);
 
-  const hasMonthlyPlan = useMemo(() => {
-    return qrData?.monthly_qr?.available === true;
+  useEffect(() => {
+    loadQr();
+  }, [loadQr]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      loadQr();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [loadQr]);
+
+  const effectiveQr = useMemo(() => {
+    return qrData?.effective_qr || null;
   }, [qrData]);
 
-  const hasDailyPass = useMemo(() => {
-    return qrData?.daily_pass_qr?.available === true;
-  }, [qrData]);
+  const qrAvailable = useMemo(() => {
+    return effectiveQr?.available === true;
+  }, [effectiveQr]);
 
   const qrType = useMemo(() => {
-    if (hasMonthlyPlan) return "QR mensual";
-    if (hasDailyPass) return "Pase diario";
-    return "Código QR";
-  }, [hasMonthlyPlan, hasDailyPass]);
+    return effectiveQr?.title || "Sin QR vigente";
+  }, [effectiveQr]);
 
   const qrStatus = useMemo(() => {
-    return (
-      qrData?.monthly_qr?.status ||
-      qrData?.daily_pass_qr?.status ||
-      "INACTIVE"
-    );
-  }, [qrData]);
+    return effectiveQr?.status || "INACTIVE";
+  }, [effectiveQr]);
+
+  const qrKind = useMemo(() => {
+    return effectiveQr?.kind || null;
+  }, [effectiveQr]);
+
+  const helperText = useMemo(() => {
+    if (!qrAvailable) {
+      return "No tienes un QR disponible en este momento.";
+    }
+
+    if (qrKind === "DAILY") {
+      return "Este QR es de un solo uso. Úsalo para validar tu pase diario.";
+    }
+
+    if (qrKind === "MONTHLY") {
+      return "Mantén este código visible al subir al servicio.";
+    }
+
+    return "Mantén este código visible al subir al servicio.";
+  }, [qrAvailable, qrKind]);
 
   if (loading) {
     return <LoadingScreen message="Cargando tu QR..." />;
@@ -119,10 +134,12 @@ export default function QrPage() {
 
         <div className="ecobus-qr-card">
           <div style={{ marginBottom: 12 }}>
-            <StatusBadge status="success">{qrType}</StatusBadge>
+            <StatusBadge status={qrAvailable ? "success" : "neutral"}>
+              {qrType}
+            </StatusBadge>
           </div>
 
-          {qrStatus === "ACTIVE" ? (
+          {qrAvailable && qrStatus === "ACTIVE" ? (
             <div className="ecobus-helper-text" style={{ marginBottom: 12 }}>
               Estado: activo
             </div>
@@ -132,10 +149,10 @@ export default function QrPage() {
             <div className="ecobus-helper-text">
               Cargando imagen del QR...
             </div>
-          ) : qrImageSrc ? (
+          ) : qrImageSrc && qrAvailable ? (
             <img
               src={qrImageSrc}
-              alt="Código QR Ecobus"
+              alt={qrType}
               className="ecobus-qr-image"
             />
           ) : (
@@ -144,9 +161,7 @@ export default function QrPage() {
             </div>
           )}
 
-          <p className="ecobus-subtitle">
-            Mantén este código visible al subir al servicio.
-          </p>
+          <p className="ecobus-subtitle">{helperText}</p>
         </div>
       </main>
 
