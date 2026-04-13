@@ -6,7 +6,6 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import QrPage from "./pages/QrPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
 import PaymentsPage from "./pages/PaymentsPage.jsx";
-import LegalPage from "./pages/LegalPage.jsx";
 
 export default function App() {
   return (
@@ -51,14 +50,6 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/legal"
-          element={
-            <ProtectedRoute>
-              <LegalPage />
-            </ProtectedRoute>
-          }
-        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
