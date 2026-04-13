@@ -6,6 +6,7 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import QrPage from "./pages/QrPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
 import PaymentsPage from "./pages/PaymentsPage.jsx";
+import TermsGatePage from "./pages/TermsGatePage.jsx";
 
 export default function App() {
   return (
@@ -13,6 +14,15 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
+
+        <Route
+          path="/terms-required"
+          element={
+            <ProtectedRoute>
+              <TermsGatePage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/dashboard"
