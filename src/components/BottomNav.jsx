@@ -1,8 +1,6 @@
 import { NavLink } from "react-router-dom";
 
-const termsUrl =
-  import.meta.env.VITE_TERMS_URL ||
-  "https://ecobus-passenger-app.onrender.com/terminos-y-condiciones.html";
+const moreUrl = "https://ecobus.cl/qr";
 
 const items = [
   { to: "/dashboard", label: "Inicio", icon: "⌂", type: "route" },
