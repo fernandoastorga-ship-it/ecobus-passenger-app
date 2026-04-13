@@ -1,7 +1,7 @@
 import { apiFetch } from "./client.js";
 
 export async function getLegal() {
-  return apiFetch("/app/legal");
+  return apiFetch("/app/legal/");
 }
 
 export async function acceptLegal(version) {
