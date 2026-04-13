@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { verifyOtp } from "../api/auth.js";
+import { getLegal } from "../api/legal.js";
 import { clearPendingEmail, getPendingEmail, setToken } from "../utils/auth.js";
 import TextInput from "../components/ui/TextInput.jsx";
 import PrimaryButton from "../components/ui/PrimaryButton.jsx";
@@ -27,6 +28,7 @@ export default function VerifyOtpPage() {
 
     try {
       setLoading(true);
+
       const data = await verifyOtp(email, code.trim());
       const token = data?.access_token || data?.token;
 
@@ -36,7 +38,15 @@ export default function VerifyOtpPage() {
 
       setToken(token);
       clearPendingEmail();
-      navigate("/dashboard", { replace: true });
+
+      const legal = await getLegal();
+      const needsAcceptance = legal?.acceptance?.needs_acceptance === true;
+
+      if (needsAcceptance) {
+        navigate("/terms-required", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       setError(err.message || "No fue posible validar el código.");
     } finally {
@@ -49,9 +59,9 @@ export default function VerifyOtpPage() {
       <main className="ecobus-page--auth">
         <section className="ecobus-auth-card">
           <div className="ecobus-brand-block">
-           <div className="ecobus-logo-wrap">
-             <img src="/logo-ecobus.png" alt="Ecobus" className="ecobus-logo-image" />
-          </div> 
+            <div className="ecobus-logo-wrap">
+              <img src="/logo-ecobus.png" alt="Ecobus" className="ecobus-logo-image" />
+            </div>
 
             <div>
               <h1 className="ecobus-title">Verifica tu acceso</h1>
