@@ -56,13 +56,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (legalError) {
-    return (
-      <div className="ecobus-app">
-        <main className="ecobus-page">
-          <div className="ecobus-error-box">{legalError}</div>
-        </main>
-      </div>
-    );
+    return children;
   }
 
   if (mustAcceptTerms && location.pathname !== "/terms-required") {
