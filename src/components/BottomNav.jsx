@@ -7,7 +7,7 @@ const items = [
   { to: "/qr", label: "QR", icon: "▣", type: "route" },
   { to: "/history", label: "Historial", icon: "≡", type: "route" },
   { to: "/payments", label: "Pagos", icon: "$", type: "route" },
-  { to: termsUrl, label: "Más", icon: "⋯", type: "external" },
+  { to: moreUrl, label: "Más", icon: "⋯", type: "external" },
 ];
 
 export default function BottomNav() {
