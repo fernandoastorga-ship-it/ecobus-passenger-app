@@ -12,7 +12,59 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body>
+    <div id="app-splash">
+      <img src="/apple-touch-icon.png" alt="WORKBUS" class="app-splash__logo" />
+      <div class="app-splash__title">WORKBUS</div>
+    </div>
+
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+    <style>
+      #app-splash {
+        position: fixed;
+        inset: 0;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.25s ease;
+      }
+
+      .app-splash__logo {
+        width: 108px;
+        height: 108px;
+        object-fit: contain;
+        border-radius: 24px;
+        margin-bottom: 16px;
+      }
+
+      .app-splash__title {
+        font-family: Arial, sans-serif;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        color: #2e7d32;
+      }
+
+      #root:empty + script + style {
+        display: block;
+      }
+    </style>
+
+    <script>
+      window.addEventListener("load", function () {
+        const splash = document.getElementById("app-splash");
+        if (!splash) return;
+
+        setTimeout(() => {
+          splash.style.opacity = "0";
+          setTimeout(() => splash.remove(), 250);
+        }, 500);
+      });
+    </script>
+</body>
 </html>
