@@ -24,6 +24,17 @@ function getFirstName(fullName) {
   return String(fullName).trim().split(/\s+/)[0];
 }
 
+function getDaysLeftLabel(daysLeft) {
+  if (daysLeft == null || Number.isNaN(Number(daysLeft))) return null;
+
+  const value = Number(daysLeft);
+
+  if (value < 0) return "Plan vencido";
+  if (value === 0) return "Vence hoy";
+  if (value === 1) return "1 día restante";
+  return `${value} días restantes`;
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -119,10 +130,15 @@ export default function DashboardPage() {
       dashboard?.plan_type ||
       "Plan mensual";
 
-    const periodLabel =
+      const periodLabel =
       plan?.period_label ||
       dashboard?.period_label ||
       "Periodo actual";
+
+    const daysLeft =
+      plan?.days_left ??
+      dashboard?.days_left ??
+      null;
 
     return {
       ridesIncluded,
@@ -131,10 +147,12 @@ export default function DashboardPage() {
       paymentStatus,
       planName,
       periodLabel,
+      daysLeft,
     };
   }, [dashboard]);
 
   const paymentStatus = normalizePaymentStatus(monthlyPlan.paymentStatus);
+  const daysLeftLabel = getDaysLeftLabel(monthlyPlan.daysLeft);
 
   const hasDailyPass = useMemo(() => {
     return (
@@ -175,6 +193,12 @@ export default function DashboardPage() {
               Has utilizado {monthlyPlan.ridesUsed} de {monthlyPlan.ridesIncluded} viajes ·{" "}
               {monthlyPlan.periodLabel}
             </div>
+
+            {daysLeftLabel ? (
+              <div className="ecobus-hero-card__meta" style={{ marginTop: 8 }}>
+                {daysLeftLabel}
+              </div>
+            ) : null}
           </div>
 
           <div className="ecobus-card ecobus-info-card">
