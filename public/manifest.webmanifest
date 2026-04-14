@@ -1,10 +1,10 @@
 {
-  "name": "Ecobus Passenger",
-  "short_name": "Ecobus",
+  "name": "WORKBUS",
+  "short_name": "WORKBUS",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#5ca52f",
+  "theme_color": "#2e7d32",
   "icons": [
     {
       "src": "/icon-192.png",
