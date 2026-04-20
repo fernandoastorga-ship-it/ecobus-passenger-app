@@ -3,7 +3,6 @@ import {
   getPayments,
   initMonthlyPlanWebpay,
   initDailyPassWebpay,
-  notifyTransfer,
 } from "../api/payments.js";
 import BottomNav from "../components/BottomNav.jsx";
 import LoadingScreen from "../components/LoadingScreen.jsx";
@@ -51,6 +50,7 @@ function getTodayDate() {
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
 const overlayStyle = {
   position: "fixed",
   inset: 0,
@@ -82,19 +82,8 @@ const modalTitleStyle = {
 
 const paymentOptionsRowStyle = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  gridTemplateColumns: "1fr",
   gap: 16,
-};
-
-const paymentOptionButtonStyle = {
-  minHeight: 96,
-  borderRadius: 10,
-  border: "1px solid #d1d5db",
-  background: "#f9fafb",
-  cursor: "pointer",
-  fontSize: 16,
-  fontWeight: 700,
-  color: "#1f2937",
 };
 
 const paymentOptionWebpayStyle = {
@@ -130,39 +119,6 @@ const webpayFeeBadgeStyle = {
   borderTopRightRadius: 10,
 };
 
-const closeButtonStyle = {
-  position: "absolute",
-  top: 10,
-  right: 14,
-  background: "transparent",
-  border: "none",
-  fontSize: 28,
-  cursor: "pointer",
-  color: "#111827",
-};
-
-const transferBoxStyle = {
-  border: "1px solid #9ca3af",
-  borderRadius: 8,
-  padding: 14,
-  background: "#f9fafb",
-  color: "#111827",
-  lineHeight: 1.7,
-  marginBottom: 16,
-};
-
-const transferButtonStyle = {
-  width: "100%",
-  border: "none",
-  borderRadius: 8,
-  background: "#22c1d6",
-  color: "#111827",
-  fontWeight: 800,
-  fontSize: 16,
-  padding: "14px 16px",
-  cursor: "pointer",
-};
-
 export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [submittingMonthly, setSubmittingMonthly] = useState(false);
@@ -175,10 +131,7 @@ export default function PaymentsPage() {
   const [selectedTripType, setSelectedTripType] = useState("IDA");
   const [selectedServiceDate, setSelectedServiceDate] = useState(getTodayDate());
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
   const [pendingPurchase, setPendingPurchase] = useState(null);
-  const [submittingTransfer, setSubmittingTransfer] = useState(false);
-  // "monthly" o "daily"
 
   async function loadPayments() {
     try {
@@ -193,7 +146,7 @@ export default function PaymentsPage() {
       setLoading(false);
     }
   }
-  
+
   useEffect(() => {
     loadPayments();
   }, []);
@@ -225,52 +178,6 @@ export default function PaymentsPage() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
-
-  async function handleTransferNotify() {
-    try {
-      setSubmittingTransfer(true);
-      setError("");
-      setMessage("");
-
-      if (!pendingPurchase) {
-        throw new Error("No hay una compra pendiente para informar.");
-      }
-
-      let request_type;
-      let payload;
-
-      if (pendingPurchase === "monthly") {
-        request_type = "MONTHLY";
-        payload = {
-          month: getCurrentMonthFirstDay(),
-          plan_type: selectedPlanType,
-        };
-      } else if (pendingPurchase === "daily") {
-        request_type = "DAILY";
-        payload = {
-          service_date: selectedServiceDate,
-          trip_type: selectedTripType,
-        };
-      } else {
-        throw new Error("Tipo de compra pendiente no válido.");
-      }
-
-      await notifyTransfer({
-        request_type,
-        payload,
-        notes: "Transferencia informada por pasajero desde app",
-      });
-
-      setShowTransferModal(false);
-      setPendingPurchase(null);
-      setMessage("Transferencia informada correctamente. Quedará pendiente de validación manual.");
-      await loadPayments();
-    } catch (err) {
-      setError(err.message || "No fue posible informar la transferencia.");
-    } finally {
-      setSubmittingTransfer(false);
-    }
-  }
 
   const monthlyPlan = useMemo(() => {
     const plan = payments?.monthly_plan || {};
@@ -542,17 +449,6 @@ export default function PaymentsPage() {
             <div style={paymentOptionsRowStyle}>
               <button
                 type="button"
-                style={paymentOptionButtonStyle}
-                onClick={() => {
-                  setShowPaymentModal(false);
-                  setShowTransferModal(true);
-                }}
-              >
-                <div style={paymentOptionTitleStyle}>🏦 Transferencia bancaria</div>
-              </button>
-
-              <button
-                type="button"
                 style={paymentOptionWebpayStyle}
                 onClick={() => {
                   setShowPaymentModal(false);
@@ -568,39 +464,6 @@ export default function PaymentsPage() {
                 <div style={paymentOptionTitleStyle}>Webpay</div>
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showTransferModal && (
-        <div style={overlayStyle}>
-          <div style={modalStyle}>
-            <button
-              type="button"
-              style={closeButtonStyle}
-              onClick={() => setShowTransferModal(false)}
-            >
-              ×
-            </button>
-
-            <div style={modalTitleStyle}>Datos de la transferencia</div>
-
-            <div style={transferBoxStyle}>
-              <div><strong>Banco:</strong> Bci/ Banco Credito e Inversiones</div>
-              <div><strong>Nombre:</strong> Fernando Astorga</div>
-              <div><strong>Tipo cuenta:</strong> Cuenta vista</div>
-              <div><strong>Rut:</strong> 19.849.459-3</div>
-              <div><strong>Cuenta:</strong> 777019849459</div>
-              <div><strong>Email:</strong> fernando.astorga@rentabuses.cl</div>
-            </div>
-
-            <button
-              style={transferButtonStyle}
-              onClick={handleTransferNotify}
-                disabled={submittingTransfer}
-              >
-                {submittingTransfer ? "Enviando..." : "YA TRANSFERÍ"}
-              </button>
           </div>
         </div>
       )}
