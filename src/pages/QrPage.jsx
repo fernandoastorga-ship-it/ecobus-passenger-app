@@ -5,6 +5,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import LoadingScreen from "../components/LoadingScreen.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import BusTrackingCard from "../components/BusTrackingCard.jsx";
 
 export default function QrPage() {
   const [loading, setLoading] = useState(true);
@@ -163,6 +164,8 @@ export default function QrPage() {
 
           <p className="ecobus-subtitle">{helperText}</p>
         </div>
+
+        <BusTrackingCard />
       </main>
 
       <BottomNav />
